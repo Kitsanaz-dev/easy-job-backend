@@ -3,13 +3,13 @@ import { generateToken, generateRefreshToken, verifyRefreshToken } from '../util
 import { comparePassword, validatePassword } from '../utils/passwordUtils.js';
 
 // Register new user (public registration - limited roles only)
-const register = async (req, res) => {
+export const register = async (req, res) => {
     try {
         const { email, username, password } = req.body;
 
         // Assign the default role as 'user'
         const assignedRole = 'user';
-        
+
         const existingUser = await User.findOne({
             $or: [{ email }, { username }]
         });
@@ -17,8 +17,8 @@ const register = async (req, res) => {
         if (existingUser) {
             return res.status(409).json({
                 success: false,
-                message: existingUser.email === email ? 
-                    'Email already registered' : 
+                message: existingUser.email === email ?
+                    'Email already registered' :
                     'Username already taken'
             });
         }
@@ -28,7 +28,7 @@ const register = async (req, res) => {
             username: username.toLowerCase(),
             password,
             role: assignedRole  // Default role
-        });        
+        });
         await user.save();
         // Generate tokens
         const tokenPayload = {
@@ -61,7 +61,7 @@ const register = async (req, res) => {
                 success: false,
                 message: `${field} already exists`
             });
-        } 
+        }
         res.status(500).json({
             success: false,
             message: 'Registration failed',
@@ -71,10 +71,10 @@ const register = async (req, res) => {
 };
 
 // Login user
-const login = async (req, res) => {
+export const login = async (req, res) => {
     try {
         const { login, password } = req.body;
-        
+
         // Find user by email or username
         const user = await User.findOne({
             $or: [
@@ -83,14 +83,14 @@ const login = async (req, res) => {
             ],
             isActive: true
         });
-        
+
         if (!user) {
             return res.status(401).json({
                 success: false,
                 message: 'Invalid credentials'
             });
         }
-        
+
         // Check if account is locked
         if (user.isLocked) {
             return res.status(423).json({
@@ -98,25 +98,25 @@ const login = async (req, res) => {
                 message: 'Account temporarily locked due to too many failed login attempts'
             });
         }
-        
+
         // Compare password
         const isPasswordValid = await comparePassword(password, user.password);
-        
+
         if (!isPasswordValid) {
             // Increment login attempts
             await user.incLoginAttempts();
-            
+
             return res.status(401).json({
                 success: false,
                 message: 'Invalid credentials'
             });
         }
-        
+
         // Reset login attempts on successful login
         if (user.loginAttempts > 0) {
             await user.resetLoginAttempts();
         }
-        
+
         // Generate tokens
         const tokenPayload = {
             userId: user._id,
@@ -124,15 +124,15 @@ const login = async (req, res) => {
             username: user.username,
             role: user.role
         };
-        
+
         const accessToken = generateToken(tokenPayload);
         const refreshToken = generateRefreshToken(tokenPayload);
-        
+
         // Save refresh token and update last login
         user.refreshTokens.push({ token: refreshToken });
         user.lastLogin = new Date();
         await user.save();
-        
+
         res.json({
             success: true,
             message: 'Login successful',
@@ -143,7 +143,7 @@ const login = async (req, res) => {
                 expiresIn: process.env.JWT_EXPIRE || '7d'
             }
         });
-        
+
     } catch (error) {
         console.error('Login error:', error);
         res.status(500).json({
@@ -155,34 +155,34 @@ const login = async (req, res) => {
 };
 
 // Refresh token
-const refreshToken = async (req, res) => {
+export const refreshToken = async (req, res) => {
     try {
         const { refreshToken } = req.body;
-        
+
         if (!refreshToken) {
             return res.status(401).json({
                 success: false,
                 message: 'Refresh token is required'
             });
         }
-        
+
         // Verify refresh token
         const decoded = verifyRefreshToken(refreshToken);
-        
+
         // Find user and check if refresh token exists
         const user = await User.findOne({
             _id: decoded.userId,
             'refreshTokens.token': refreshToken,
             isActive: true
         });
-        
+
         if (!user) {
             return res.status(401).json({
                 success: false,
                 message: 'Invalid refresh token'
             });
         }
-        
+
         // Generate new tokens
         const tokenPayload = {
             userId: user._id,
@@ -190,17 +190,17 @@ const refreshToken = async (req, res) => {
             username: user.username,
             role: user.role
         };
-        
+
         const newAccessToken = generateToken(tokenPayload);
         const newRefreshToken = generateRefreshToken(tokenPayload);
-        
+
         // Replace old refresh token with new one
         user.refreshTokens = user.refreshTokens.filter(
             token => token.token !== refreshToken
         );
         user.refreshTokens.push({ token: newRefreshToken });
         await user.save();
-        
+
         res.json({
             success: true,
             message: 'Token refreshed successfully',
@@ -210,7 +210,7 @@ const refreshToken = async (req, res) => {
                 expiresIn: process.env.JWT_EXPIRE || '7d'
             }
         });
-        
+
     } catch (error) {
         console.error('Token refresh error:', error);
         res.status(401).json({
@@ -221,24 +221,24 @@ const refreshToken = async (req, res) => {
 };
 
 // Logout user
-const logout = async (req, res) => {
+export const logout = async (req, res) => {
     try {
         const { refreshToken } = req.body;
         const userId = req.user?.userId;
-        
-            if (userId && refreshToken) {
+
+        if (userId && refreshToken) {
             // Remove refresh token from user
             await User.updateOne(
                 { _id: userId },
                 { $pull: { refreshTokens: { token: refreshToken } } }
             );
         }
-        
+
         res.json({
             success: true,
             message: 'Logout successful'
         });
-        
+
     } catch (error) {
         console.error('Logout error:', error);
         res.status(500).json({
@@ -249,48 +249,23 @@ const logout = async (req, res) => {
     }
 };
 
-// Logout from all devices
-const logoutAll = async (req, res) => {
-    try {
-        const userId = req.user.userId;
-        
-        // Remove all refresh tokens
-        await User.updateOne(
-            { _id: userId },
-            { $set: { refreshTokens: [] } }
-        );
-        
-        res.json({
-            success: true,
-            message: 'Logged out from all devices'
-        });
-        
-    } catch (error) {
-        console.error('Logout all error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Logout failed'
-        });
-    }
-};
-
 // Get current user profile
-const getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user.userId);
-        
+
         if (!user) {
             return res.status(404).json({
                 success: false,
                 message: 'User not found'
             });
         }
-        
+
         res.json({
             success: true,
             data: { user }
         });
-        
+
     } catch (error) {
         console.error('Get profile error:', error);
         res.status(500).json({
@@ -301,31 +276,31 @@ const getProfile = async (req, res) => {
 };
 
 // Change password
-const changePassword = async (req, res) => {
+export const changePassword = async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
         const userId = req.user.userId;
-        
+
         // Get user with password
         const user = await User.findById(userId).select('+password');
-        
+
         if (!user) {
             return res.status(404).json({
                 success: false,
                 message: 'User not found'
             });
         }
-        
+
         // Verify current password
         const isCurrentPasswordValid = await comparePassword(currentPassword, user.password);
-        
+
         if (!isCurrentPasswordValid) {
             return res.status(400).json({
                 success: false,
                 message: 'Current password is incorrect'
             });
         }
-        
+
         // Validate new password
         const validation = validatePassword(newPassword);
         if (!validation.isValid) {
@@ -335,7 +310,7 @@ const changePassword = async (req, res) => {
                 errors: validation.errors
             });
         }
-        
+
         // Check if new password is different from current
         const isSamePassword = await comparePassword(newPassword, user.password);
         if (isSamePassword) {
@@ -344,16 +319,16 @@ const changePassword = async (req, res) => {
                 message: 'New password must be different from current password'
             });
         }
-        
+
         // Update password
         user.password = newPassword; // Will be hashed by pre-save middleware
         await user.save();
-        
+
         res.json({
             success: true,
             message: 'Password changed successfully'
         });
-        
+
     } catch (error) {
         console.error('Change password error:', error);
         res.status(500).json({
@@ -364,35 +339,35 @@ const changePassword = async (req, res) => {
 };
 
 // Update profile
-const updateProfile = async (req, res) => {
+export const updateProfile = async (req, res) => {
     try {
         const userId = req.user.userId;
         const { firstName, lastName, profile } = req.body;
-        
+
         const updateData = {};
         if (firstName) updateData.firstName = firstName;
         if (lastName) updateData.lastName = lastName;
         if (profile) updateData.profile = { ...updateData.profile, ...profile };
-        
+
         const user = await User.findByIdAndUpdate(
             userId,
             updateData,
             { new: true, runValidators: true }
         );
-        
+
         if (!user) {
             return res.status(404).json({
                 success: false,
                 message: 'User not found'
             });
         }
-        
+
         res.json({
             success: true,
             message: 'Profile updated successfully',
             data: { user }
         });
-        
+
     } catch (error) {
         console.error('Update profile error:', error);
         res.status(400).json({
@@ -401,15 +376,4 @@ const updateProfile = async (req, res) => {
             error: error.message
         });
     }
-};
-
-export {
-    register,
-    login,
-    refreshToken,
-    logout,
-    logoutAll,
-    getProfile,
-    changePassword,
-    updateProfile
 };
