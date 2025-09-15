@@ -11,7 +11,8 @@ app.use('/api/auth', authRouter);
 app.get('/', (req, res) => {
     res.json({
         message: "Hello World",
-        success: true
+        success: true,
+        status: 200
     });
 })
 
