@@ -28,9 +28,9 @@ app.use(rateLimit({
 }));
 
 // Routes
-const userRoutes = require('./routes/userRoutes');
-const postRoutes = require('./routes/postRoutes');
-const favoriteRoutes = require('./routes/favoriteRoutes');
+const userRoutes = require('./routes/user.routes');
+const postRoutes = require('./routes/post.routes');
+const favoriteRoutes = require('./routes/favourite.routes');
 
 app.use('/users', userRoutes);
 app.use('/posts', postRoutes);

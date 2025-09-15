@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const favController = require('../controllers/favoriteController');
+const favController = require('../controllers/favourite.controller');
 const auth = require('../middleware/auth');
 
 router.post('/add/:id', auth, favController.addToFavorite);
