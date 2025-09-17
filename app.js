@@ -32,9 +32,9 @@ const userRoutes = require('./routes/user.routes');
 const postRoutes = require('./routes/post.routes');
 const favoriteRoutes = require('./routes/favorite.routes');
 
-app.use('/users', userRoutes);
-app.use('/posts', postRoutes);
-app.use('/favorites', favoriteRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/favorites', favoriteRoutes);
 
 // Root route
 app.get('/', (req, res) => {
