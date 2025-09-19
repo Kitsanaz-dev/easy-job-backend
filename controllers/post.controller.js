@@ -122,3 +122,13 @@ exports.unlikePost = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
+//get my post
+exports.getMyPosts = async (req, res) => {
+  try {
+    const posts = await Post.find({ userID: req.user.userID }).populate('userID', 'name email');
+    res.status(200).json(posts);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
