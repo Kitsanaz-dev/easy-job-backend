@@ -4,10 +4,19 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const http = require('http');
+const socketIO = require('socket.io');
 
 const connectDB = require('./config/database'); // your connectDB function
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIO(server, {
+  cors: {
+    origin: "*",
+    methods: ['GET', 'POST']
+  }
+});
 
 // Connect to MongoDB
 connectDB();
@@ -41,4 +50,4 @@ app.get('/', (req, res) => {
   res.send('API is running');
 });
 
-module.exports = app;
+module.exports = { app, server, io };

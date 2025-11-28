@@ -8,7 +8,10 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true,
+    lowercase: true,
+    match: [/^[^\s@]+@[^\s@]+\.com$/i, 'Invalid email format. Email must contain "@" and end with ".com"']
   },
   password: {
     type: String,
