@@ -17,7 +17,9 @@ exports.createPost = async (req, res) => {
 // Get All Posts (missing before)
 exports.getAllPosts = async (req, res) => {
   try {
-    const posts = await Post.find().populate('userID', 'name email');
+    const posts = await Post.find()
+      .sort({ createdAt: -1 })
+      .populate('userID', 'name email');
     res.status(200).json(posts);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
@@ -126,7 +128,9 @@ exports.unlikePost = async (req, res) => {
 //get my post
 exports.getMyPosts = async (req, res) => {
   try {
-    const posts = await Post.find({ userID: req.user.userID }).populate('userID', 'name email');
+    const posts = await Post.find({ userID: req.user.userID })
+      .sort({ createdAt: -1 })
+      .populate('userID', 'name email');
     res.status(200).json(posts);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });

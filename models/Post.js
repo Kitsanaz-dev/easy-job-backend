@@ -45,7 +45,7 @@ const postSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    minlength: 10,
+    minlength: 0,
     maxlength: 5000
   },
   status: {

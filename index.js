@@ -1,16 +1,13 @@
 const { server, io } = require("./app")
+const jwt = require('jsonwebtoken');
+const User = require('./models/User');
 
 const PORT = 3000
 
-server.listen(PORT,()=>{
+server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`)
 })
 
-// Socket.IO connection handler
-io.on('connection', (socket) => {
-    console.log('New user connected:', socket.id);
-
-    socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id);
-    });
-});
+// Socket.IO connection handler moved to separate module
+const initSocket = require('./socketio');
+initSocket(io);

@@ -18,6 +18,8 @@ exports.createUser = async (req, res) => {
     const newUser = new User({ name, email, password: hashed });
     const saved = await newUser.save();
 
+    console.log(`✅ User registered: ${name} <${email}>`);
+
     res.status(201).json(saved);
   } catch (error) {
     // If it's a mongoose validation error, return 400
