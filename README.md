@@ -1,135 +1,129 @@
-# 🧑‍💻 EasyJob – Job Finder Platform  
+# Easy Job — Backend
 
-A full-stack job finding platform built with **React**, **Express.js**, **MongoDB**, and **JWT authentication**.  
-It allows users to register/login, browse and create job posts, mark posts as favorites, and manage their profile.
+This repository contains the backend for the Easy Job project: a REST API built with Node.js, Express, MongoDB (Mongoose) and JWT authentication.
 
----
-
-## 🚀 Features
-- 🔐 **User Authentication**: Register, login, JWT-based auth.  
-- 👤 **Profile Page**: Manage your personal details and see your posts.  
-- 🏠 **Home Page**: Browse all job posts.  
-- ❤️ **Favorites**: Save/unfavorite jobs with a single click.  
-- 📝 **Create Post**: Share job opportunities with the community.  
-- 🔎 **Post Detail Page**: View individual job posts.  
-- 🎨 **UI/UX**: Modern responsive design with TailwindCSS.  
-- 📦 **API Services**: Centralized Axios instance with token interceptors.  
+This README is focused on the backend service in this repository. If you have a separate frontend, run it alongside this backend and point it to the API base URL (default `http://localhost:3000`).
 
 ---
 
-## 🛠️ Tech Stack
-### Frontend
-- React (Vite or CRA depending on your setup)
-- React Router v6
-- Axios (with interceptors for token handling)
-- TailwindCSS
-- SweetAlert2 (for notifications)
+## Features
 
-### Backend
+- User registration & login (JWT)
+- CRUD for job posts
+- Favorite posts per user
+- Basic real-time support (Socket.IO) for presence/chat
+
+---
+
+## Tech Stack
+
 - Node.js + Express
 - MongoDB + Mongoose
 - JWT for authentication
-- bcrypt for password hashing
+- Socket.IO for realtime events
 
 ---
 
-## 📂 Project Structure
-```bash
-easyjob/
-│
-├── backend/
-│   ├── controllers/       # auth, posts, favorites
-│   ├── middleware/        # JWT auth
-│   ├── models/            # User, Post, Favorite
-│   ├── routes/            # API routes
-│   └── server.js          # Express entrypoint
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/    # Header, Footer, PostCard, AboutUs, etc.
-│   │   ├── page/          # LoginPage, RegisterPage, HomePage, ProfilePage, FavoritePage
-│   │   ├── services/      # api.js, auth.js, favoriteService.js, postService.js
-│   │   ├── App.jsx        # Routes + Layout
-│   │   └── main.jsx       # React root
-│   └── package.json
-│
-└── README.md
+## Project layout (important files)
+
+```
+easy-job-backend/
+├── app.js                 # Express app and Socket.IO initialization
+├── index.js               # Server entry (starts HTTP server)
+├── socketio.js            # Socket.IO event handling
+├── controllers/           # Request handlers (user, post, favorite)
+├── models/                # Mongoose models (User, Post, Favorite)
+├── routes/                # Express routes
+├── config/                # DB connection and other config
+├── middleware/            # Auth middleware
+└── package.json
 ```
 
 ---
 
-## ⚙️ Installation & Setup
+## Requirements
 
-### 1. Clone the repository
-```bash
-git clone https://github.com/YOUR-USERNAME/easy-job.git
-cd easy-job
-```
+- Node.js 14+ (recommended)
+- MongoDB (local or remote)
 
-### 2. Backend setup
+---
+
+## Setup (backend)
+
+1. Install dependencies
+
 ```bash
-cd backend
 npm install
 ```
-Create a `.env` file:
+
+2. Create a `.env` in the project root with:
+
 ```env
 PORT=3000
 MONGO_URI=mongodb://localhost:27017/easyjob
-JWT_SECRET=supersecretkey
+JWT_SECRET=your_jwt_secret_here
 ```
-Run the backend:
+
+3. Run the server in development
+
 ```bash
 npm run dev
 ```
 
-### 3. Frontend setup
-```bash
-cd frontend
-npm install
-```
-Create a `.env` file:
-```env
-VITE_API_URL=http://localhost:3000/api
-```
-Run the frontend:
-```bash
-npm run dev
-```
+The server listens on the port defined in `.env` (defaults to `3000`).
 
 ---
 
-## 🔑 API Endpoints
+## Socket.IO (realtime)
+
+- The backend initializes Socket.IO and exposes events. When connecting, clients should send the JWT token as part of the handshake so the server can authenticate and attach the user to the socket.
+
+Client example (socket.io-client):
+
+```js
+const socket = io('http://localhost:3000', {
+	auth: { token: YOUR_JWT }
+});
+
+socket.on('connect', () => console.log('connected', socket.id));
+socket.on('user_connected', (data) => console.log('user connected', data));
+socket.on('user_disconnected', (data) => console.log('user disconnected', data));
+```
+
+The server emits `user_connected` and `user_disconnected` events with basic user info.
+
+---
+
+## API Endpoints (summary)
 
 ### Auth
-- `POST /api/users` → Register
-- `POST /api/users/login` → Login
-- `GET /api/users/:id` → Get user info  
+- `POST /api/users` — Register (body: `{ name, email, password }`)
+- `POST /api/users/login` — Login (body: `{ email, password }`) → returns `{ token, user }`
 
 ### Posts
-- `GET /api/posts` → Get all posts
-- `POST /api/posts` → Create post
-- `GET /api/posts/:id` → Get single post  
+- `GET /api/posts` — Get all posts
+- `POST /api/posts` — Create a post (protected)
+- `GET /api/posts/:id` — Get single post
+- `PUT /api/posts/:id` — Update post (protected, owner-only)
+- `DELETE /api/posts/:id` — Delete post (protected, owner-only)
 
 ### Favorites
-- `GET /api/favorites` → Get user favorites
-- `POST /api/favorites/add/:id` → Add post to favorites
-- `POST /api/favorites/remove/:id` → Remove post from favorites  
+- `GET /api/favorites` — Get user's favorites (protected)
+- `POST /api/favorites/add/:id` — Add post to favorites (protected)
+- `POST /api/favorites/remove/:id` — Remove post from favorites (protected)
+
+For precise request/response shapes, check the controllers in `controllers/`.
 
 ---
 
-## 📸 Screenshots (optional)
-- Landing Page  
-- Login / Register Page  
-- Home with Posts  
-- Post Detail  
-- Favorites Page  
-- Profile Page  
+## Contributing
+
+1. Fork
+2. Create a branch: `git checkout -b feature/your-feature`
+3. Commit: `git commit -m "feat: description"`
+4. Push and open a PR
 
 ---
 
-## 🤝 Contributing
-1. Fork the project  
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)  
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)  
-4. Push to the branch (`git push origin feature/AmazingFeature`)  
-5. Open a Pull Request  
+If you want, I can also add a short Postman collection or example curl commands for each endpoint.
+
